@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from lifesci.core import (
-    ARTIFACTS, LETTERS, MODALITIES, image_metrics, load_image,
+    ARTIFACTS, LETTERS, MODALITIES, compare_image_quality, image_metrics, load_image,
     review_flags, score_predictions, sha256_bytes, validate_record,
 )
 from lifesci.demo import synthetic_field
@@ -27,7 +27,7 @@ st.warning("Research / education prototype only. Not for diagnosis, triage, clin
 if "records" not in st.session_state:
     st.session_state.records = []
 
-inspect, annotate, review, guide = st.tabs(["Image QC", "VQA Annotation", "Review & Export", "Methods & Limits"])
+inspect, annotate, review, compare, guide = st.tabs(["Image QC", "VQA Annotation", "Review & Export", "Compare Image Quality", "Methods & Limits"])
 
 with inspect:
     st.subheader("1. Select an image")
@@ -172,3 +172,39 @@ streamlit run app.py
 pytest -q
 ```
 """)
+
+
+with compare:
+    st.subheader("Interactive scientific-image comparison")
+    st.caption("Compare numerical image-quality indicators across simulated conditions or your own locally selected images. These are imaging statistics, not microscopy diagnoses.")
+    demo_mode = st.toggle("Use generated synthetic examples", value=True)
+    labeled_images = []
+    if demo_mode:
+        labeled_images = [(condition, synthetic_field(condition)) for condition in
+                          ("baseline", "defocused", "low_contrast", "overexposed")]
+        st.info("These samples are generated illustrations. They are not blood, tissue, clinical specimens, or measured experimental images.")
+    else:
+        compare_files = st.file_uploader("Choose 2–6 PNG, JPEG, or TIFF images to compare", type=["png", "jpg", "jpeg", "tif", "tiff"],
+                                         accept_multiple_files=True, key="quality_compare_files")
+        if 2 <= len(compare_files) <= 6:
+            for index, file in enumerate(compare_files):
+                try:
+                    labeled_images.append((f"{index + 1}: {file.name}", load_image(file.getvalue())))
+                except ValueError as exc:
+                    st.error(f"{file.name}: {exc}")
+                    labeled_images = []
+                    break
+        else:
+            st.info("Select between two and six images for a comparison.")
+    if labeled_images:
+        contrast_cutoff = st.slider("Contrast review threshold", 0.01, 0.50, 0.15, 0.01, key="compare_contrast")
+        edge_cutoff = st.slider("Edge variation threshold", 0.0001, 0.10, 0.003, 0.0001, format="%.4f", key="compare_edge")
+        comparisons = compare_image_quality(labeled_images, contrast_floor=contrast_cutoff, edge_floor=edge_cutoff)
+        table = pd.DataFrame(comparisons)
+        st.dataframe(table, use_container_width=True, hide_index=True)
+        metric = st.selectbox("Compare metric", ["mean_luminance", "p05_p95_contrast", "laplacian_variance",
+                                                       "dark_pixel_fraction", "bright_pixel_fraction"], key="comparison_metric")
+        st.bar_chart(table.set_index("condition")[[metric]], use_container_width=True)
+        st.download_button("Download comparison as CSV", table.to_csv(index=False).encode("utf-8"),
+                           "image_quality_comparison.csv", "text/csv")
+        st.caption("Numerical comparisons are not adjusted for differences in stain, magnification, tissue density, image compression, or acquisition settings. Expert review is still required.")

@@ -44,3 +44,16 @@ Python, Streamlit, NumPy, Pillow, Pandas, pytest. No paid API keys needed.
 ## License
 
 MIT; synthetic assets are illustrative rather than biological reference imagery.
+
+
+## Mission alignment: Build an Interactive Data Visualization
+
+The **Compare Image Quality** tab compares two to six images with interactive
+thresholds, metrics, bar charts, review prompts and downloadable CSV results.
+It includes four procedural demonstration conditions, so users can explore the
+interactive visuals before supplying their own licensed research images.
+Results are transparent imaging measurements and do not constitute pathology
+classification, identification of contamination, or scientific ground truth.
+
+Use a verified GitHub or deployed application URL for mission submission and
+check the mission's individual instructions for required deliverables.

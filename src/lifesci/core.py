@@ -148,3 +148,21 @@ def score_predictions(records: list[dict], predictions: list[dict]) -> dict:
     return {'total': len(details), 'correct': sum(x['correct'] for x in details),
             'accuracy': round(sum(x['correct'] for x in details) / len(details), 4) if details else 0,
             'details': details}
+
+
+
+def compare_image_quality(labeled_images: list[tuple[str, Image.Image]],
+                          *, contrast_floor: float = 0.15,
+                          edge_floor: float = 0.003) -> list[dict]:
+    """Return explainable numeric metrics for multiple images, never diagnoses."""
+    if len({label for label, _ in labeled_images}) != len(labeled_images):
+        raise ValueError("Comparison image labels must be unique")
+    output = []
+    for label, img in labeled_images:
+        if not label or not isinstance(img, Image.Image):
+            raise ValueError("Comparison inputs must contain label and PIL image")
+        metrics = image_metrics(img)
+        output.append({"condition": label, **metrics,
+                       "review_prompts": "; ".join(review_flags(metrics, contrast_floor=contrast_floor,
+                                                               edge_floor=edge_floor))})
+    return output
