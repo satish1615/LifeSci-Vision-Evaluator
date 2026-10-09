@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifesci-vision-evaluator"
+version = "0.1.0"
+description = "Transparent scientific image QC and multimodal evaluation record builder"
+requires-python = ">=3.10"
+dependencies = ["streamlit>=1.36,<2", "numpy>=1.26,<3", "Pillow>=10,<13", "pandas>=2,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
